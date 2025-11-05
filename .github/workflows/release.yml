@@ -65,10 +65,10 @@ jobs:
           chmod +x scripts/build-linux.sh
           scripts/build-linux.sh release
 
-      - name: Create tarball
+      - name: Rename executable
         run: |
           cd build
-          copy sprite_backer sprite_backer-linux-x64
+          cp sprite_backer sprite_backer-linux-x64
           mv sprite_backer-linux-x64 ..
 
       - name: Upload Linux artifact
@@ -98,10 +98,10 @@ jobs:
           chmod +x scripts/build-macos.sh
           scripts/build-macos.sh release
 
-      - name: Create tarball
+      - name: Rename executable
         run: |
           cd build
-          copy sprite_backer sprite_backer-macos-universal
+          cp sprite_backer sprite_backer-macos-universal
           mv sprite_backer-macos-universal ..
 
       - name: Upload macOS artifact
