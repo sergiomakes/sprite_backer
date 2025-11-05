@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdint.h>
 
@@ -131,7 +132,6 @@ DecodeUTF8(const char** str, OUT int* codepoint)
     return 1;
 }
 
-
 INTERNAL bool32_t
 LoadImage(const char* filename, const char* name, OUT image_t* image)
 {
@@ -143,8 +143,8 @@ LoadImage(const char* filename, const char* name, OUT image_t* image)
         return 0;
     }
 
-    strcpy_s(image->name, MAX_NAME, name);
-    strcpy_s(image->filename, MAX_FILENAME, filename);
+    strcpy(image->name, name);
+    strcpy(image->filename, filename);
 
     image->width = width;
     image->height = height;
@@ -185,8 +185,8 @@ LoadFont(const char* filename, const char* name, char* charset, int size, OUT fo
         return 0;
     }
 
-    strcpy_s(font->name, MAX_NAME, name);
-    strcpy_s(font->filename, MAX_FILENAME, name);
+    strcpy(font->name, name);
+    strcpy(font->filename, name);
     font->size = size;
     font->scale = stbtt_ScaleForPixelHeight(&font->info, (float)size);
     stbtt_GetFontVMetrics(&font->info, &font->ascent, &font->descent, &font->line_gap);
@@ -228,7 +228,7 @@ ParseConfig(const char* config, OUT atlas_t* atlas)
     FILE* f = fopen(config, "r");
     if (!f)
     {
-        printf_s("Error: Cannot open config file: %s\n", config);
+        printf("Error: Cannot open config file: %s\n", config);
         return 0;
     }
 
@@ -244,11 +244,11 @@ ParseConfig(const char* config, OUT atlas_t* atlas)
         }
 
         char cmd[MAX_NAME];
-        sscanf_s(line, "%s", cmd, MAX_NAME);
+        sscanf(line, "%s", cmd);
 
         if (strncmp(cmd, "ATLAS_SIZE", 10) == 0)
         {
-            sscanf_s(line, "ATLAS_SIZE %d", &atlas->width);
+            sscanf(line, "ATLAS_SIZE %d", &atlas->width);
             atlas->height = atlas->width;
         }
         else if (strncmp(cmd, "FONT", 4) == 0)
@@ -256,7 +256,7 @@ ParseConfig(const char* config, OUT atlas_t* atlas)
             char filename[MAX_FILENAME], name[MAX_NAME], charset[MAX_CHARSET];
             int size;
             
-            if (sscanf_s(line, "FONT %s %d %s %s", filename, MAX_FILENAME, &size, charset, MAX_CHARSET, name, MAX_NAME) == 4)
+            if (sscanf(line, "FONT %s %d %s %s", filename, &size, charset, name) == 4)
             {
                 if (atlas->font_count < MAX_FONTS)
                 {
@@ -266,26 +266,26 @@ ParseConfig(const char* config, OUT atlas_t* atlas)
                     }
                     else
                     {
-                        printf_s("Error: Failed to load font: %s\n", filename);
+                        printf("Error: Failed to load font: %s\n", filename);
                         return 0;
                     }
                 }
                 else
                 {
-                    printf_s("Error: No more fonts can be loaded. Increase number of fonts allowed.\n");
+                    printf("Error: No more fonts can be loaded. Increase number of fonts allowed.\n");
                     return 0;
                 }
             }
             else
             {
-                printf_s("Error: Invalid font config: %s\n", line);
+                printf("Error: Invalid font config: %s\n", line);
                 return 0;
             }
         }
         else if (strncmp(cmd, "IMAGE", 5) == 0)
         {
             char filename[MAX_FILENAME], name[MAX_NAME];
-            if (sscanf_s(line, "IMAGE %s %s", filename, MAX_FILENAME, name, MAX_NAME))
+            if (sscanf(line, "IMAGE %s %s", filename, name))
             {
                 if (atlas->image_count < MAX_IMAGES)
                 {
@@ -295,19 +295,19 @@ ParseConfig(const char* config, OUT atlas_t* atlas)
                     }
                     else
                     {
-                        printf_s("Error: Failed to load image: %s\n", filename);
+                        printf("Error: Failed to load image: %s\n", filename);
                         return 0;
                     }
                 }
                 else
                 {
-                    printf_s("Error: No more images can be loaded. Increase the number of allowed images.\n");
+                    printf("Error: No more images can be loaded. Increase the number of allowed images.\n");
                     return 0;
                 }
             }
             else
             {
-                printf_s("Error: Invalid image format: %s\n", line);
+                printf("Error: Invalid image format: %s\n", line);
             }
         }
     }
@@ -316,7 +316,7 @@ ParseConfig(const char* config, OUT atlas_t* atlas)
 
     // White image
     image_t* image = &atlas->images[atlas->image_count++];
-    strcpy_s(image->name, MAX_NAME, "WHITE");
+    strcpy(image->name, "WHITE");
     image->width = 4;
     image->height = 4;
     image->pixels = 0;
@@ -778,11 +778,11 @@ ExportHeader(atlas_t* atlas, const char* filename)
     FILE* f = fopen(filename, "w");
     if (!f)
     {
-        printf_s("Error: Cannot create header file.\n");
+        printf("Error: Cannot create header file.\n");
         return 0;
     }
 
-    fprintf_s(f, "// Auto-generated sprite atlas - DO NOT EDIT!\n"
+    fprintf(f, "// Auto-generated sprite atlas - DO NOT EDIT!\n"
                  "// Generated by sprite backer tool\n"
                  "// Contains %d fonts and %d images\n\n"
                  "#pragma once\n\n"
@@ -797,10 +797,10 @@ ExportHeader(atlas_t* atlas, const char* filename)
 
     for (int i = 0; i < atlas->image_count; ++i)
     {
-        fprintf_s(f, "    SPRITE_%s,\n", atlas->images[i].name);
+        fprintf(f, "    SPRITE_%s,\n", atlas->images[i].name);
     }
 
-    fprintf_s(f, "    SPRITE_COUNT,\n"
+    fprintf(f, "    SPRITE_COUNT,\n"
                  "} sprite_id;\n\n"
                  "static const sprite_t BACKED_SPRITE_LIST[] = {\n");
 
@@ -812,7 +812,7 @@ ExportHeader(atlas_t* atlas, const char* filename)
         float u1 = (float)(image->x + image->width) / (float)atlas->width;
         float v1 = (float)(image->y + image->height) / (float)atlas->height;
 
-        fprintf_s(f,
+        fprintf(f,
             "    [SPRITE_%s] = {%d, %d, %d, %d, %ff, %ff, %ff, %ff},\n",
             image->name,
             image->x, image->y,
@@ -821,7 +821,7 @@ ExportHeader(atlas_t* atlas, const char* filename)
         );
     }
 
-    fprintf_s(f, "};\n\n"
+    fprintf(f, "};\n\n"
                  "typedef struct\n{\n"
                  "    uint64_t codepoint;     // Unicode codepoint\n"
                  "    uint32_t w, h;          // Dimensions\n"
@@ -840,10 +840,10 @@ ExportHeader(atlas_t* atlas, const char* filename)
 
     for (int i = 0; i < atlas->font_count; ++i)
     {
-        fprintf_s(f, "    FONT_%s,\n", atlas->fonts[i].name);
+        fprintf(f, "    FONT_%s,\n", atlas->fonts[i].name);
     }
 
-    fprintf_s(f, "    FONT_COUNT,\n"
+    fprintf(f, "    FONT_COUNT,\n"
                  "} font_id;\n\n"
                  "static const font_t BACKED_FONT_LIST[] = {\n");
     
@@ -864,7 +864,7 @@ ExportHeader(atlas_t* atlas, const char* filename)
         }
 
         font_t* font = &atlas->fonts[i];
-        fprintf_s(f, "    [FONT_%s] = {\n"
+        fprintf(f, "    [FONT_%s] = {\n"
                      "        .size = %d,\n"
                      "        .ascent = %d,\n"
                      "        .descent = %d,\n"
@@ -881,7 +881,7 @@ ExportHeader(atlas_t* atlas, const char* filename)
             if (glyph->codepoint < 128)
             {
                 ascii_count++;
-                fprintf_s(f, "            [0x%02X] = { %d, %d, %d, %ff, %ff, %ff, %ff, %ff, %ff, %ff },\n",
+                fprintf(f, "            [0x%02X] = { %d, %d, %d, %ff, %ff, %ff, %ff, %ff, %ff, %ff },\n",
                              glyph->codepoint, glyph->codepoint,
                              glyph->glyph.w, glyph->glyph.h,
                              glyph->glyph.u0, glyph->glyph.v0,
@@ -895,15 +895,15 @@ ExportHeader(atlas_t* atlas, const char* filename)
             }
         }
 
-        fprintf_s(f, "        },\n");
+        fprintf(f, "        },\n");
 
         if (font->glyph_count <= ascii_count)
         {
-            fprintf_s(f, "        .glyph_count = 0,\n");
+            fprintf(f, "        .glyph_count = 0,\n");
         }
         else
         {
-            fprintf_s(f, "        .glyph_count = %d,\n"
+            fprintf(f, "        .glyph_count = %d,\n"
                          "        .glyphs = {\n",
                          font->glyph_count - ascii_count);
 
@@ -913,7 +913,7 @@ ExportHeader(atlas_t* atlas, const char* filename)
                 glyph_mapping_t* glyph = &font->glyphs[j];
                 if (glyph->codepoint >= 128)
                 {
-                    fprintf_s(f, "            [%d] = { %d, %d, %d, %ff, %ff, %ff, %ff, %ff, %ff, %ff },\n",
+                    fprintf(f, "            [%d] = { %d, %d, %d, %ff, %ff, %ff, %ff, %ff, %ff, %ff },\n",
                     index++, glyph->codepoint,
                     glyph->glyph.w, glyph->glyph.h,
                     glyph->glyph.u0, glyph->glyph.v0,
@@ -923,13 +923,13 @@ ExportHeader(atlas_t* atlas, const char* filename)
                 }
             }
 
-            fprintf_s(f, "        },\n");
+            fprintf(f, "        },\n");
         }
 
-        fprintf_s(f, "    },\n");
+        fprintf(f, "    },\n");
     }
 
-    fprintf_s(f, "};\n");
+    fprintf(f, "};\n");
     fclose(f);
 
     return 1;
@@ -940,7 +940,7 @@ main(int argc, char* argv[])
 {
     if (argc != 3)
     {
-        printf_s("Usage: %s <config_file> <output_name>\n\n"
+        printf("Usage: %s <config_file> <output_name>\n\n"
                "Example: %s config.txt spritesheet\n\n"
                "Example config.txt:\n"
                "ATLAS_SIZE 1024\n"
@@ -952,13 +952,13 @@ main(int argc, char* argv[])
 
     if (!ParseConfig(argv[1], &atlas))
     {
-        printf_s("Error: Invalid config file: %s\n", argv[1]);
+        printf("Error: Invalid config file: %s\n", argv[1]);
         return 1;
     }
 
     if (!CreateAtlas(&atlas))
     {
-        printf_s("Error: Failed to pack atlas\n");
+        printf("Error: Failed to pack atlas\n");
         return 1;
     }
         
@@ -970,7 +970,7 @@ main(int argc, char* argv[])
     
     if (!ExportHeader(&atlas, filename))
     {
-        printf_s("Error: Failed to creat eheader file.\n");
+        printf("Error: Failed to creat eheader file.\n");
         return 1;
     }
 
