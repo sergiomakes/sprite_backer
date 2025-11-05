@@ -1,0 +1,138 @@
+name: Build Release
+
+on:
+  release:
+    types: [created]
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Add MSVC to PATH
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build Windows Release
+        shell: cmd
+        run: scripts\build-windows.bat release
+
+      - name: Rename Windows executable
+        shell: cmd
+        run: |
+          cd build
+          copy sprite_backer.exe sprite_backer-windows-x64.exe
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sprite_backer-windows-x64
+          path: build/sprite_backer-windows-x64.exe
+
+      - name: Upload to Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/sprite_backer-windows-x64.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+
+      - name: Build Linux Release
+        run: |
+          chmod +x scripts/build-linux.sh
+          scripts/build-linux.sh release
+
+      - name: Create tarball
+        run: |
+          cd build
+          tar -czf sprite_backer-linux-x64.tar.gz sprite_backer
+          mv sprite_backer-linux-x64.tar.gz ..
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sprite_backer-linux-x64
+          path: sprite_backer-linux-x64.tar.gz
+
+      - name: Upload to Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: sprite_backer-linux-x64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build macOS Release
+        run: |
+          chmod +x scripts/build-macos.sh
+          scripts/build-macos.sh release
+
+      - name: Create tarball
+        run: |
+          cd build
+          tar -czf sprite_backer-macos-universal.tar.gz sprite_backer
+          mv sprite_backer-macos-universal.tar.gz ..
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sprite_backer-macos-universal
+          path: sprite_backer-macos-universal.tar.gz
+
+      - name: Upload to Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: sprite_backer-macos-universal.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  create-release-summary:
+    needs: [build-windows, build-linux, build-macos]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Display structure
+        run: ls -R
+
+      - name: Create checksums
+        run: |
+          cd sprite_backer-windows-x64
+          sha256sum sprite_backer-windows-x64.exe > ../checksums.txt
+          cd ../sprite_backer-linux-x64
+          sha256sum sprite_backer-linux-x64.tar.gz >> ../checksums.txt
+          cd ../sprite_backer-macos-universal
+          sha256sum sprite_backer-macos-universal.tar.gz >> ../checksums.txt
+
+      - name: Upload checksums to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: checksums.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
