@@ -25,7 +25,7 @@ if %ERRORLEVEL% neq 0 (
 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 set CC=cl
-set CFLAGS_COMMON=/nologo /W3 /Oi /I%ROOT_DIR%\vendor /I%ROOT_DIR%\src /fp:fast /std:c17 /DPLATFORM_WIN32 /D_CRT_SECURE_NO_WARNINGS
+set CFLAGS_COMMON=/nologo /W4 /Oi /I%ROOT_DIR%\vendor /I%ROOT_DIR%\src /fp:fast /std:c17 /DPLATFORM_WIN32 /D_CRT_SECURE_NO_WARNINGS
 set CFLAGS_DEBUG=/Od /Zi /D_DEBUG /DDEBUG /MTd /DSOKOL_DEBUG /DBUILD_INTERNAL /DBUILD_HOTRELOAD
 set CFLAGS_INTERNAL=/O2 /MT /DNDEBUG /DBUILD_INTERNAL
 set CFLAGS_RELEASE=/O2 /MT /DNDEBUG

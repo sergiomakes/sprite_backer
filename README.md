@@ -87,8 +87,8 @@ sprite_backer config.txt spritesheet
 ```
 
 This will generate:
-- `spritesheet.gen.png` - The packed texture atlas
-- `spritesheet.gen.h` - C header file with sprite definitions
+- `spritesheet.png` - The packed texture atlas
+- `spritesheet.h` - C header file with sprite definitions
 
 ## Configuration File Format
 
